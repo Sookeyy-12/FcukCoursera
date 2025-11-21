@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { width: 300px; padding: 15px; font-family: sans-serif; }
+    button { width: 100%; padding: 10px; background-color: #0056D2; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #00419e; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    #status { margin-top: 10px; font-size: 12px; color: #333; }
+    .log { max-height: 150px; overflow-y: auto; background: #f0f0f0; padding: 5px; margin-top: 10px; font-size: 10px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h3>Coursera Skipper</h3>
+  <p>Navigate to a Course Home page and click Start.</p>
+  <button id="startBtn">Skip All Videos</button>
+  <div id="status">Ready</div>
+  <div id="log" class="log"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Coursera Video Skipper",
+  "version": "1.0",
+  "description": "Automates marking all videos as complete in a Coursera course.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "cookies",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.coursera.org/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.coursera.org/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
