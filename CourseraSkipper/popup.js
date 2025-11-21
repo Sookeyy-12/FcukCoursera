@@ -19,6 +19,27 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     });
 });
 
+document.getElementById('readBtn').addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab.url.includes("coursera.org")) {
+        document.getElementById('status').innerText = "Error: Not on Coursera!";
+        return;
+    }
+
+    document.getElementById('readBtn').disabled = true;
+    document.getElementById('status').innerText = "Starting Readings...";
+
+    // Send message to content script to start
+    chrome.tabs.sendMessage(tab.id, { action: "start_reading_completion" }, (response) => {
+        if (chrome.runtime.lastError) {
+            document.getElementById('status').innerText = "Error: Refresh page & try again.";
+        } else {
+            console.log("Reading process started");
+        }
+    });
+});
+
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === "log") {
         const logDiv = document.getElementById('log');
