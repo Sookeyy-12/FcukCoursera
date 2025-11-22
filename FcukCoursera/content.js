@@ -1,14 +1,27 @@
+// Global State
+let globalState = {
+    isRunning: false,
+    currentAction: null,
+    statusMessage: "Ready",
+    progress: { current: 0, total: 0, message: "" },
+    logs: []
+};
+
 // Helper to log to popup
 function log(msg) {
     console.log("[FcukCoursera]", msg);
+    globalState.logs.push(msg);
+    if (globalState.logs.length > 100) globalState.logs.shift();
     chrome.runtime.sendMessage({ action: "log", data: msg }).catch(() => {});
 }
 
 function updateStatus(msg) {
+    globalState.statusMessage = msg;
     chrome.runtime.sendMessage({ action: "status", data: msg }).catch(() => {});
 }
 
 function updateProgress(current, total, message) {
+    globalState.progress = { current, total, message };
     chrome.runtime.sendMessage({ 
         action: "progress_update", 
         data: { current, total, message } 
@@ -17,20 +30,49 @@ function updateProgress(current, total, message) {
 
 // Main Logic
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "get_status") {
+        sendResponse(globalState);
+        return;
+    }
+
     if (request.action === "start_skipping") {
-        startSkippingProcess();
+        if (globalState.isRunning) {
+            sendResponse({ status: "already_running" });
+            return;
+        }
+        globalState.isRunning = true;
+        globalState.currentAction = "skipping";
+        startSkippingProcess().finally(() => { globalState.isRunning = false; });
         sendResponse({ status: "started" });
     }
     if (request.action === "start_reading_completion") {
-        startReadingCompletionProcess();
+        if (globalState.isRunning) {
+            sendResponse({ status: "already_running" });
+            return;
+        }
+        globalState.isRunning = true;
+        globalState.currentAction = "reading";
+        startReadingCompletionProcess().finally(() => { globalState.isRunning = false; });
         sendResponse({ status: "started" });
     }
     if (request.action === "start_quiz_solver") {
-        startQuizSolverProcess(request.apiKey);
+        if (globalState.isRunning) {
+            sendResponse({ status: "already_running" });
+            return;
+        }
+        globalState.isRunning = true;
+        globalState.currentAction = "quiz";
+        startQuizSolverProcess(request.apiKey).finally(() => { globalState.isRunning = false; });
         sendResponse({ status: "started" });
     }
     if (request.action === "start_complete_course") {
-        startCompleteCourseProcess(request.apiKey);
+        if (globalState.isRunning) {
+            sendResponse({ status: "already_running" });
+            return;
+        }
+        globalState.isRunning = true;
+        globalState.currentAction = "complete";
+        startCompleteCourseProcess(request.apiKey).finally(() => { globalState.isRunning = false; });
         sendResponse({ status: "started" });
     }
 });
@@ -72,8 +114,8 @@ async function startCompleteCourseProcess(apiKey) {
 
                 if (result) {
                     completedCount++;
-                    // Rate limit delay
-                    await new Promise(r => setTimeout(r, 1000));
+                    // Rate limit delay - Reduced to 100ms
+                    await new Promise(r => setTimeout(r, 100));
                 }
 
             } catch (e) {
@@ -96,12 +138,14 @@ async function startSkippingProcess() {
         const { userId, courseId, courseSlug, allItems } = await getCourseData();
         
         log(`Queued ${allItems.length} items for checking...`);
+        updateProgress(0, allItems.length, "Starting...");
 
         // 4. Iterate and Complete
         let completedCount = 0;
         for (let i = 0; i < allItems.length; i++) {
             const item = allItems[i];
             updateStatus(`[${i + 1}/${allItems.length}] ${item.moduleName}: ${item.name}`);
+            updateProgress(i, allItems.length, item.name);
             
             try {
                 const result = await completeSingleVideo(userId, courseId, courseSlug, item.id);
@@ -109,18 +153,19 @@ async function startSkippingProcess() {
                     log(`[Video Completed] ${item.name} (${item.moduleName})`);
                     completedCount++;
                     // Reduced delay after a successful video completion to speed up processing
-                    await new Promise(r => setTimeout(r, 500));
+                    await new Promise(r => setTimeout(r, 50));
                 } else {
                     // It wasn't a video, or failed silently
                     // log(`[Skipped] ${item.name} (Not a video)`);
                     // Short delay to not hammer API
-                    await new Promise(r => setTimeout(r, 200));
+                    await new Promise(r => setTimeout(r, 10));
                 }
             } catch (e) {
                 log(`[Error] ${item.name}: ${e.message}`);
             }
         }
 
+        updateProgress(allItems.length, allItems.length, "Done!");
         updateStatus(`Done! Completed ${completedCount} videos.`);
         chrome.runtime.sendMessage({ action: "finished" }).catch(() => {});
 
@@ -191,8 +236,8 @@ async function completeSingleVideo(userId, courseId, courseSlug, itemId) {
         method: 'PUT', headers: headers, body: progressPayload, credentials: 'include'
     });
 
-    // Wait a bit for server validation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait a bit for server validation - Reduced to 100ms
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // 3. End
     const endResp = await fetch(apiUrlBase + 'ended?autoEnroll=false', {
@@ -300,24 +345,28 @@ async function startReadingCompletionProcess() {
             log(`Found ${readingItems.length} readings.`);
         }
 
+        updateProgress(0, readingItems.length, "Starting...");
+
         let completedCount = 0;
         for (let i = 0; i < readingItems.length; i++) {
             const item = readingItems[i];
             updateStatus(`[${i + 1}/${readingItems.length}] Checking: ${item.name}`);
+            updateProgress(i, readingItems.length, item.name);
             
             try {
                 const result = await completeSingleReading(userId, courseId, courseSlug, item.id);
                 if (result) {
                     log(`[Reading Completed] ${item.name}`);
                     completedCount++;
-                    // Small delay to avoid rate limits
-                    await new Promise(r => setTimeout(r, 500));
+                    // Small delay to avoid rate limits - Reduced to 50ms
+                    await new Promise(r => setTimeout(r, 50));
                 }
             } catch (e) {
                 log(`[Error] ${item.name}: ${e.message}`);
             }
         }
 
+        updateProgress(readingItems.length, readingItems.length, "Done!");
         updateStatus(`Done! Completed ${completedCount} readings.`);
         chrome.runtime.sendMessage({ action: "finished" }).catch(() => {});
 
