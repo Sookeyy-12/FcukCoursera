@@ -11,12 +11,30 @@
   </style>
 </head>
 <body>
-  <h3>Coursera Skipper</h3>
-  <p>Navigate to a Course Home page and click Start.</p>
+  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+    <img src="icon.jpg" style="width: 40px; height: 40px; margin-right: 10px; border-radius: 50%;">
+    <h2 style="margin: 0; color: #0056D2;">FcukCoursera</h2>
+  </div>
+  
+  <p style="text-align: center; font-size: 12px; color: #666; margin-top: 0;">Navigate to a Course Home page and click Start.</p>
   <button id="startBtn">Skip All Videos</button>
   <button id="readBtn" style="margin-top: 5px; background-color: #28a745;">Skip All Readings</button>
+  <div style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+    <input type="password" id="apiKey" placeholder="Gemini API Key" style="width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 5px;">
+    <button id="quizBtn" style="background-color: #6f42c1;">Solve Quizzes (Beta)</button>
+    <button id="completeBtn" style="margin-top: 5px; background-color: #d63384;">Complete Course (Beta)</button>
+  </div>
+  
+  <div id="progressContainer" style="margin-top: 10px; background-color: #e0e0e0; border-radius: 4px; height: 10px; display: none;">
+    <div id="progressBar" style="background-color: #28a745; height: 100%; width: 0%; border-radius: 4px; transition: width 0.3s;"></div>
+  </div>
+  <div id="progressText" style="text-align: center; font-size: 10px; margin-top: 2px; display: none;">0%</div>
+
   <div id="status">Ready</div>
   <div id="log" class="log"></div>
+  <div style="text-align: center; margin-top: 10px; font-size: 10px; color: #888;">
+    Made by Sookeyy
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>
