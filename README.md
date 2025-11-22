@@ -11,7 +11,7 @@ My university assigned Coursera courses with tight deadlines, and I kept remembe
 1. Clone or download this repository.
 2. Open Chrome and navigate to `chrome://extensions`.
 3. Enable **Developer mode** in the top right corner.
-4. Click **Load unpacked** and select the `CourseraSkipper` folder from this repository.
+4. Click **Load unpacked** and select the `FcukCoursera` folder from this repository.
 
 ## Usage
 1. **Get a Gemini API Key**:
